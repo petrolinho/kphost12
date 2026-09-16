@@ -1,0 +1,5 @@
+{
+  "name":"kp-hosts-agent","version":"1.1.0","private":true,
+  "scripts":{"start":"node src/agent.js"},
+  "dependencies":{"express":"^4.21.2"}
+}

@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>KP HOSTS — Gerenciar servidor</title><link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<header><div class="logo"><b>KP</b> HOSTS</div><nav><a href="/">Início</a><a href="/#planos">Planos</a><a href="/#checkout">Pagamento</a></nav></header>
+<main class="panel-wrap">
+<a class="back-link" href="/">← Voltar para a KP HOSTS</a>
+<div class="panel-top">
+  <div><h1 class="panel-title">Gerenciar <span id="serverName" class="server-id">servidor</span></h1><p class="muted">Painel de controle do seu servidor Minecraft</p></div>
+  <div id="status" class="status"><span class="dot"></span><span>Carregando...</span></div>
+</div>
+<div id="notice" class="notice">Conectando ao agente da KP HOSTS...</div>
+<div class="metric" style="margin:16px 0"><div class="metric-label">Endereço para entrar no Minecraft</div><div id="serverAddress" class="metric-value">Carregando...</div></div>
+<div class="panel-grid">
+  <div class="metric"><div class="metric-label">Status</div><div id="mStatus" class="metric-value">—</div></div>
+  <div class="metric"><div class="metric-label">RAM configurada</div><div id="mRam" class="metric-value">—</div></div>
+  <div class="metric"><div class="metric-label">Armazenamento</div><div id="mDisk" class="metric-value">—</div></div>
+  <div class="metric"><div class="metric-label">PID</div><div id="mPid" class="metric-value">—</div></div>
+  <div class="metric"><div class="metric-label">Sistema</div><div id="mPlatform" class="metric-value">—</div></div>
+  <div class="actions-card"><div class="metric-label">Controles</div><div class="actions" style="margin-top:12px"><button class="action-btn primary" onclick="doAction('start')">▶ Iniciar</button><button class="action-btn danger" onclick="doAction('stop')">■ Parar</button><button class="action-btn" onclick="doAction('restart')">↻ Reiniciar</button></div></div>
+  <div class="console-card panel-wide">
+    <div class="console-head"><div><div class="metric-label">Console</div><strong>Saída do servidor Minecraft</strong></div><div class="toolbar"><button class="action-btn" onclick="loadConsole()">↻ Atualizar</button><button class="action-btn" onclick="toggleAuto()" id="autoBtn">Auto: ON</button></div></div>
+    <div id="console" class="console loading">Carregando console...</div>
+  </div>
+  <div class="tools-card panel-wide"><div class="metric-label">Próximas ferramentas</div><p class="muted">Gerenciador de arquivos, plugins, configurações, backups e métricas detalhadas podem ser adicionados nesta mesma área.</p></div>
+</div>
+</main>
+<script>
+const params=new URLSearchParams(location.search); const id=params.get('id')||'';
+const nameEl=document.querySelector('#serverName'); const notice=document.querySelector('#notice'); const serverAddress=document.querySelector('#serverAddress');
+let auto=true, timer=null;
+if(!/^[a-zA-Z0-9_-]{1,64}$/.test(id)){ notice.textContent='Informe um ID de servidor válido na URL, por exemplo: /server.html?id=eu'; throw new Error('invalid server id'); }
+nameEl.textContent=id;
+fetch('/api/dashboard').then(r=>r.json()).then(d=>{const s=d.servers?.find(x=>x.id===id);serverAddress.textContent=s?.address||'kphost.ddns.net:porta';}).catch(()=>serverAddress.textContent='kphost.ddns.net:porta');
+function fmtBytes(n){if(!Number.isFinite(n))return '—';const u=['B','KB','MB','GB','TB'];let i=0;while(n>=1024&&i<u.length-1){n/=1024;i++}return `${n.toFixed(i?1:0)} ${u[i]}`}
+async function api(path,opts={}){const r=await fetch(`/api/servers/${encodeURIComponent(id)}/${path}`,opts);const d=await r.json().catch(()=>({}));if(!r.ok)throw Error(d.error||'Erro na API');return d}
+async function loadStatus(){try{const d=await api('status');const online=d.status==='online';document.querySelector('#status').className='status '+(online?'online':'');document.querySelector('#status span:last-child').textContent=online?'ONLINE':'OFFLINE';document.querySelector('#mStatus').textContent=online?'🟢 Online':'⚫ Offline';document.querySelector('#mRam').textContent=`${(d.maxRamMb/1024).toFixed(d.maxRamMb%1024?1:0)} GB`;document.querySelector('#mDisk').textContent=fmtBytes(d.diskBytes);document.querySelector('#mPid').textContent=d.pid||'—';document.querySelector('#mPlatform').textContent=d.platform||'—';notice.textContent=online?'Servidor em execução.':'Servidor parado. Use Iniciar para ligar o Minecraft.';notice.classList.remove('loading')}catch(e){notice.textContent='Não foi possível falar com o Agent. Confira se a API e o Agent estão rodando e se o servidor existe.';}}
+async function loadConsole(){try{const d=await api('console');const el=document.querySelector('#console');el.textContent=d.console||'Sem saída no console ainda.';el.scrollTop=el.scrollHeight;el.classList.remove('loading')}catch(e){document.querySelector('#console').textContent='Console indisponível: '+e.message}}
+async function doAction(action){notice.textContent=`Executando: ${action}...`;try{await api('action',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({action})});notice.textContent=`Comando ${action} enviado.`;setTimeout(()=>{loadStatus();loadConsole()},800)}catch(e){notice.textContent='Erro: '+e.message}}
+function toggleAuto(){auto=!auto;document.querySelector('#autoBtn').textContent='Auto: '+(auto?'ON':'OFF');if(timer)clearInterval(timer);if(auto)timer=setInterval(()=>{loadStatus();loadConsole()},3000)}
+loadStatus();loadConsole();timer=setInterval(()=>{if(auto){loadStatus();loadConsole()}},3000);
+</script>
+</body></html>
