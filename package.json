@@ -1,0 +1,7 @@
+{
+  "name": "kp-hosts-vercel",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": { "start": "node api/src/server.js" },
+  "dependencies": { "express": "^4.21.2" }
+}

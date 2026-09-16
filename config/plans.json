@@ -1,0 +1,20 @@
+{
+  "plans": [
+    {
+      "id": "2gb",
+      "name": "KP START",
+      "ram_mb": 2048,
+      "disk_gb": 20,
+      "cpu_percent": 100,
+      "price_brl": 9.90
+    },
+    {
+      "id": "8gb",
+      "name": "KP PRO",
+      "ram_mb": 8192,
+      "disk_gb": 60,
+      "cpu_percent": 250,
+      "price_brl": 29.90
+    }
+  ]
+}
